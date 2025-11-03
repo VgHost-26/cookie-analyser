@@ -1,0 +1,24 @@
+{
+  "name": "Cookie Analyser",
+  "description": "Simple cookie analyser extension",
+  "version": "0.0",
+  "manifest_version": 3,
+  "host_permissions": [
+    "<all_urls>"
+  ],
+   "permissions": [
+    "cookies",
+    "storage",
+    "tabs",
+    "webRequest",
+    "scripting"
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": "icons/icon.png"
+  },
+   "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  }
+}
