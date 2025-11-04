@@ -1,0 +1,26 @@
+[{
+    "Domain": "propwire.com",
+    "Max-Age": "31536000",
+    "Path": "/",
+    "SameSite": "Lax", 
+    "datadome": "yQdbcky8D9iLl0Szvu79gr2nC~FML0wUzXaI8NRDLj8moUtQgyg29J2Afn8q~XznPa5Psy8sG0eF7fN9FfkEuzaEBDf22Nh6Em10ZVPGFsZFCCFjh9T3qiz9hu3p0V02",
+    "method": "POST",
+    "saveTimestamp": 1762187626611,
+    "thirdParty": true,
+    "url": "https://api.propwire.com/api/auto_complete"
+}
+,
+{
+    "domain": ".propwire.com",
+    "expirationDate": 1796725877.732712,
+    "hostOnly": false,
+    "httpOnly": false,
+    "name": "_atcid",
+    "path": "/",
+    "sameSite": "lax",
+    "secure": false,
+    "session": false,
+    "storeId": "0",
+    "value": "3vOdIwNgGLxkVc"
+}
+]

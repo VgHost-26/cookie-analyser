@@ -1,10 +1,14 @@
 import { parseCookieFromHeader } from './functions.js'
-import { STORAGE_CAPTURED_COOKIES_KEY } from './globals.js'
+import {
+  STORAGE_CAPTURED_COOKIES_KEY,
+  STORAGE_STORED_COOKIES_KEY,
+} from './globals.js'
 
 chrome.runtime.onInstalled.addListener(({ reason }) => {
   console.log('Extension installed, reason: ', reason)
   if (reason == 'install') {
     chrome.storage.local.set({ [STORAGE_CAPTURED_COOKIES_KEY]: [] })
+    chrome.storage.local.set({ [STORAGE_STORED_COOKIES_KEY]: [] })
   }
 })
 
@@ -34,35 +38,57 @@ chrome.runtime.onInstalled.addListener(({ reason }) => {
 // )
 
 chrome.webRequest.onHeadersReceived.addListener(
-  function (details) {
+  async function (details) {
     if (details.responseHeaders && details.responseHeaders.length > 0) {
       const cookieDough = details.responseHeaders.filter(
         header => header.name.toLowerCase() === 'set-cookie'
       )
       if (cookieDough.length > 0) {
+
         console.log('------- Cookie detected -------')
         console.log('Raw cookie dough:', cookieDough)
+
         const bakedCookies = parseCookieFromHeader(
           cookieDough.map(c => c.value)
         )
+
         console.log(bakedCookies)
+
+        let [tab] = await chrome.tabs.query({
+          active: true,
+          currentWindow: true,
+        })
+        console.log('Current tab:', tab)
+        if (!tab?.url) return
+        const currentUrl = new URL(tab?.url)
 
         chrome.storage.local.get([STORAGE_CAPTURED_COOKIES_KEY], result => {
           const cookies = result.capturedCookies || []
+          console.log('=========== Initiator:', details.initiator)
+          const initiatorURL = new URL(details.initiator)
+          console.log('current url:', currentUrl.hostname)
+          console.log('Initiator URL:', initiatorURL.hostname)
+          const thirdParty = currentUrl.hostname !== initiatorURL.hostname
+
+          if (thirdParty) {
+            console.log('Third party cookie detected')
+            console.log('initiator:', initiatorURL.hostname)
+            console.log('currentUrl:', currentUrl.hostname)
+          }
 
           bakedCookies.forEach(bakedCookie => {
             cookies.push({
               ...bakedCookie,
               url: details.url,
+              domain: bakedCookie.domain || new URL(details.url).hostname,
               saveTimestamp: Date.now(),
               method: details.method,
+              thirdParty: thirdParty,
+              fromTabId: tab.id,
             })
           })
 
           if (cookies.length > 100) {
-            // prevent to many cookies in the sotorage
-            // TODO: adjust this value maybe
-            console.log(`cut last ${cookies.length - 100} cookies`)
             const recentCookies = cookies.slice(-100)
             chrome.storage.local.set({ capturedCookies: recentCookies })
           } else {
