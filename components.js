@@ -62,7 +62,6 @@ export function renderCookieList(listType, cookies) {
   if (filteredCookies.length === 0) {
     listElement.innerHTML = `
       <div class="empty-state">
-        <div class="empty-state-icon">🍪</div>
         <p>No cookies found</p>
       </div>
     `
@@ -108,5 +107,5 @@ export function showCookieDetails(cookie) {
     </div>
   `).join('')
   
-  modal.style.display = 'block'
+  modal.showModal()
 }

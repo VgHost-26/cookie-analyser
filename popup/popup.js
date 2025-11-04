@@ -15,6 +15,7 @@ let filters = {
   category: 'all',
   party: 'all',
 }
+
 ;(async function initPopupWindow() {
   console.log('init')
   currentTab = await chrome.tabs.query({
@@ -25,7 +26,6 @@ let filters = {
   await loadCookies()
   setupEventListeners()
   updateUI()
-  runModel()
 })()
 
 function setupEventListeners() {
@@ -35,7 +35,6 @@ function setupEventListeners() {
     })
   })
 
-  // Filters
   document.getElementById('search').addEventListener('input', e => {
     filters.search = e.target.value.toLowerCase()
     updateUI()
@@ -59,7 +58,7 @@ function setupEventListeners() {
 
   // Modal close
   document.querySelector('.close').addEventListener('click', () => {
-    document.getElementById('cookie-details-modal').style.display = 'none'
+    document.getElementById('cookie-details-modal').close()
   })
 }
 
@@ -79,20 +78,18 @@ function switchTab(tabName) {
 
 function updateUI() {
   updateSummaryStats()
-  renderCookieList('all', getAllCookies())
-  renderCookieList('captured', capturedCookies)
   renderCookieList('stored', storedCookies)
+  renderCookieList('captured', capturedCookies)
 }
 
 function updateSummaryStats() {
-  const allCookies = getAllCookies()
   const categories = {
     essential: 0,
     analytics: 0,
     marketing: 0,
   }
 
-  allCookies.forEach(cookie => {
+  storedCookies.forEach(cookie => {
     const category = simpleCookieClassifier(cookie)
     if (categories.hasOwnProperty(category)) {
       categories[category]++
@@ -105,19 +102,12 @@ function updateSummaryStats() {
 }
 
 async function loadCookies() {
-  // Get captured cookies
   capturedCookies = await getCapturedCookiesFromCurrentTab()
-
-  // Get stored cookies
   storedCookies = await storeAndGetCookiesFromCurrentTab()
-
-  console.log('Captured:', capturedCookies.length)
-  console.log('Stored:', storedCookies.length)
 }
 
 async function storeAndGetCookiesFromCurrentTab() {
   // overrites stored cookies
-  console.log('collecting cookies...')
   let [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
   if (tab?.url) {
     const url = new URL(tab.url)
@@ -132,20 +122,6 @@ async function storeAndGetCookiesFromCurrentTab() {
 async function getStoredCookies() {
   const result = await chrome.storage.local.get([STORAGE_STORED_COOKIES_KEY])
   return result[STORAGE_STORED_COOKIES_KEY] || []
-}
-
-function getAllCookies() {
-  const allCookies = [...capturedCookies, ...storedCookies]
-  const uniqueCookies = new Map()
-
-  allCookies.forEach(cookie => {
-    const name = cookie.name || Object.keys(cookie)[0]
-    if (!uniqueCookies.has(name)) {
-      uniqueCookies.set(name, cookie)
-    }
-  })
-
-  return Array.from(uniqueCookies.values())
 }
 
 async function getCapturedCookiesFromCurrentTab() {
