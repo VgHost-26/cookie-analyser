@@ -76,13 +76,13 @@ function switchTab(tabName) {
   document.getElementById(`${tabName}-tab`).classList.add('active')
 }
 
-function updateUI() {
-  updateSummaryStats()
+async function updateUI() {
   renderCookieList('stored', storedCookies)
   renderCookieList('captured', capturedCookies)
+  updateSummaryStats()
 }
 
-function updateSummaryStats() {
+window.updateSummaryStats = function updateSummaryStats() {
   const categories = {
     essential: 0,
     analytics: 0,
@@ -90,11 +90,13 @@ function updateSummaryStats() {
   }
 
   storedCookies.forEach(cookie => {
-    const category = simpleCookieClassifier(cookie)
+    const category = cookie.aiCategory || simpleCookieClassifier(cookie)
     if (categories.hasOwnProperty(category)) {
       categories[category]++
     }
   })
+
+  console.log(`%c[Stats Update] Essential: ${categories.essential}, Analytics: ${categories.analytics}, Marketing: ${categories.marketing}`, 'color: #00BCD4');
 
   document.getElementById('essential-count').textContent = categories.essential
   document.getElementById('analytics-count').textContent = categories.analytics
@@ -133,20 +135,17 @@ async function getCapturedCookiesFromCurrentTab() {
 export function applyFilters(cookies) {
   return cookies.filter(cookie => {
     const name = (cookie.name || Object.keys(cookie)[0] || '').toLowerCase()
-    const category = simpleCookieClassifier(cookie)
+    const category = cookie.aiCategory || simpleCookieClassifier(cookie)
     const isThirdParty = cookie.thirdParty || false
 
-    // Search filter
     if (filters.search && !name.includes(filters.search)) {
       return false
     }
 
-    // Category filter
     if (filters.category !== 'all' && category !== filters.category) {
       return false
     }
 
-    // Party filter
     if (filters.party === 'first' && isThirdParty) return false
     if (filters.party === 'third' && !isThirdParty) return false
 

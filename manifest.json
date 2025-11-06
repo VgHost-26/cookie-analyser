@@ -6,20 +6,29 @@
   "host_permissions": [
     "<all_urls>"
   ],
-   "permissions": [
+  "permissions": [
     "cookies",
     "storage",
     "tabs",
     "webRequest",
-    "scripting"
+    "scripting",
+    "offscreen"
   ],
   "action": {
     "default_popup": "popup/popup.html",
     "default_icon": "icons/icon.png"
   },
-   "background": {
+  "background": {
     "service_worker": "background.js",
     "type": "module"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["onnx-files/*", "quantized_model/*"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
   }
-
 }

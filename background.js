@@ -4,11 +4,55 @@ import {
   STORAGE_STORED_COOKIES_KEY,
 } from './globals.js'
 
+async function setupOffscreenDocument() {
+  const offscreenUrl = chrome.runtime.getURL('offscreen.html');
+  const existingContexts = await chrome.runtime.getContexts({
+    contextTypes: ['OFFSCREEN_DOCUMENT'],
+    documentUrls: [offscreenUrl]
+  });
+
+  if (existingContexts.length > 0) {
+    return;
+  }
+
+  await chrome.offscreen.createDocument({
+    url: 'offscreen.html',
+    reasons: ['DOM_SCRAPING'],
+    justification: 'ONNX Runtime for cookie classification'
+  });
+}
+
 chrome.runtime.onInstalled.addListener(({ reason }) => {
   console.log('Extension installed, reason: ', reason)
   if (reason == 'install') {
     chrome.storage.local.set({ [STORAGE_CAPTURED_COOKIES_KEY]: [] })
     chrome.storage.local.set({ [STORAGE_STORED_COOKIES_KEY]: [] })
+  }
+  setupOffscreenDocument();
+})
+
+chrome.runtime.onStartup.addListener(() => {
+  setupOffscreenDocument();
+})
+
+async function classifyCookieViaOffscreen(cookieName) {
+  await setupOffscreenDocument();
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage({
+      type: 'CLASSIFY_COOKIE',
+      cookieName: cookieName
+    }, (response) => {
+      resolve(response);
+    });
+  });
+}
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'CLASSIFY_COOKIE' && !sender.url?.includes('offscreen.html')) {
+    classifyCookieViaOffscreen(message.cookieName).then(response => {
+      sendResponse(response);
+    });
+    return true;
   }
 })
 
