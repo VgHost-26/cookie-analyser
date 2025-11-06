@@ -20,12 +20,19 @@
             <span id="marketing-count">0</span>
             <label>Marketing</label>
           </div>
+          <div class="stat functional">
+            <span id="functional-count">0</span>
+            <label>Functional</label>
+          </div>
         </div>
       </header>
 
       <nav class="tabs">
         <button class="tab-btn active" data-tab="stored">Stored Cookies</button>
         <button class="tab-btn" data-tab="captured">Network Cookies</button>
+        <button class="tab-btn" data-tab="external-domains">
+          External Domains
+        </button>
       </nav>
 
       <div class="filters">
@@ -43,6 +50,10 @@
           <option value="first">First Party</option>
           <option value="third">Third Party</option>
         </select>
+        <label for="is-only-current-tab" id="is-only-current-tab-label"
+          >Only curr tab
+          <input type="checkbox" checked id="is-only-current-tab" />
+        </label>
       </div>
 
       <div class="tab-content">
@@ -51,6 +62,9 @@
         </div>
         <div id="captured-tab" class="tab-pane">
           <div id="captured-cookies-list" class="cookie-list"></div>
+        </div>
+        <div id="external-domains-tab" class="tab-pane">
+          <div id="external-domains-list" class="cookie-list"></div>
         </div>
       </div>
 

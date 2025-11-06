@@ -7,3 +7,8 @@ export const COOKIE_CATEGORIES = {
   MARKETING: 'marketing',
   UNKNOWN: 'unknown',
 }
+export const VIEWS = {
+  STORED: 'stored',
+  CAPTURED: 'captured',
+  DOMAINS: 'external-domains',
+}

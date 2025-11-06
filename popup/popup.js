@@ -1,27 +1,37 @@
 import {
   STORAGE_CAPTURED_COOKIES_KEY,
   STORAGE_STORED_COOKIES_KEY,
+  VIEWS,
 } from '../globals.js'
 
-import { renderCookieList } from '../components.js'
-import { simpleCookieClassifier } from '../functions.js'
+import { renderCookieList, renderExternalDomainsList } from '../components.js'
+import {
+  getCapturedCookiesStats,
+  getCurrentTab,
+  simpleCookieClassifier,
+} from '../functions.js'
 
 let capturedCookies = []
 let storedCookies = []
 
 let currentTab
+let currentTabURL
 let filters = {
   search: '',
   category: 'all',
   party: 'all',
+  thisTabOnly: true,
 }
+let currentView = VIEWS.STORED
 
 ;(async function initPopupWindow() {
   console.log('init')
-  currentTab = await chrome.tabs.query({
-    active: true,
-    lastFocusedWindow: true,
-  })
+  currentTab = await getCurrentTab()
+  if (currentTab?.url) {
+    currentTabURL = new URL(currentTab?.url)
+  } else {
+    currentTabURL = undefined
+  }
 
   await loadCookies()
   setupEventListeners()
@@ -50,6 +60,13 @@ function setupEventListeners() {
     updateUI()
   })
 
+  document
+    .getElementById('is-only-current-tab')
+    .addEventListener('change', e => {
+      filters.thisTabOnly = e.target.checked
+      updateUI()
+    })
+
   // Export button
   // document.getElementById('export-btn').addEventListener('click', exportData)
 
@@ -63,6 +80,8 @@ function setupEventListeners() {
 }
 
 function switchTab(tabName) {
+  currentView = tabName
+
   // Update tab buttons
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.classList.remove('active')
@@ -74,12 +93,29 @@ function switchTab(tabName) {
     pane.classList.remove('active')
   })
   document.getElementById(`${tabName}-tab`).classList.add('active')
+
+  if (currentView === VIEWS.DOMAINS) {
+    document.getElementById('is-only-current-tab-label').style.display = 'flex'
+  } else {
+    document.getElementById('is-only-current-tab-label').style.display =
+      'none'
+  }
 }
 
 async function updateUI() {
+  updateSummaryStats()
   renderCookieList('stored', storedCookies)
   renderCookieList('captured', capturedCookies)
-  updateSummaryStats()
+
+  let capturedCookieStats
+  if (filters.thisTabOnly) {
+    capturedCookieStats = getCapturedCookiesStats(capturedCookies)
+  } else {
+    const allCapturedCookies = await getCapturedCookies()
+    capturedCookieStats = getCapturedCookiesStats(allCapturedCookies)
+  }
+
+  renderExternalDomainsList(capturedCookieStats.domainStats)
 }
 
 window.updateSummaryStats = function updateSummaryStats() {
@@ -87,6 +123,7 @@ window.updateSummaryStats = function updateSummaryStats() {
     essential: 0,
     analytics: 0,
     marketing: 0,
+    functional: 0,
   }
 
   storedCookies.forEach(cookie => {
@@ -104,6 +141,8 @@ window.updateSummaryStats = function updateSummaryStats() {
   document.getElementById('essential-count').textContent = categories.essential
   document.getElementById('analytics-count').textContent = categories.analytics
   document.getElementById('marketing-count').textContent = categories.marketing
+  document.getElementById('functional-count').textContent =
+    categories.functional
 }
 
 async function loadCookies() {
@@ -129,10 +168,19 @@ async function getStoredCookies() {
   return result[STORAGE_STORED_COOKIES_KEY] || []
 }
 
+async function getCapturedCookies() {
+  const result = await chrome.storage.local.get([STORAGE_CAPTURED_COOKIES_KEY])
+  return result[STORAGE_CAPTURED_COOKIES_KEY] || []
+}
+
 async function getCapturedCookiesFromCurrentTab() {
   const result = await chrome.storage.local.get([STORAGE_CAPTURED_COOKIES_KEY])
   const cookies = result[STORAGE_CAPTURED_COOKIES_KEY] || []
-  return cookies.filter(cookie => cookie.fromTabId === currentTab[0].id)
+  return cookies.filter(
+    cookie =>
+      cookie.fromTabId === currentTab.id &&
+      cookie.capturedAtDomain === currentTabURL?.hostname
+  )
 }
 
 export function applyFilters(cookies) {

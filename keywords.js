@@ -46,3 +46,14 @@ export const essentialKeywords = [
   'SESS',
   'xsrf',
 ]
+export const functionalKeywords = [
+  'preferences',
+  'settings',
+  'lang',
+  'location',
+  'currency',
+  'gdpr',
+  'consent',
+  'cookieconsent',
+  'accept_cookies',
+]

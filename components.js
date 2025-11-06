@@ -15,7 +15,11 @@ export function createCookieItem(cookie, category = null) {
   <span class="cookie-name">${name}</span>
   <div class="cookie-badges">
   ${isInvisible ? '<span class="badge invisible">Invisible</span>' : ''}
-  ${isThirdParty ? '<span class="badge third-party">3rd Party</span>' : '<span class="badge first-party">1st Party</span>'}
+  ${
+    isThirdParty
+      ? '<span class="badge third-party">3rd Party</span>'
+      : '<span class="badge first-party">1st Party</span>'
+  }
   ${isSecure ? '<span class="badge secure">Secure</span>' : ''}
   </div>
   <div class="cookie-buttons">
@@ -27,22 +31,27 @@ export function createCookieItem(cookie, category = null) {
   <strong>Category:</strong> ${cookieCategory}
   </div>
   <div class="cookie-value">
-  <strong>Value:</strong> ${value.substring(0, 50)}${value.length > 50 ? '...' : ''}
+  <strong>Value:</strong> ${value.substring(0, 50)}${
+    value.length > 50 ? '...' : ''
+  }
   </div>
   </div>
   `
 }
 export function createNetworkCookieItem(cookie) {
-  
   const isThirdParty = cookie.thirdParty || false
   const isSecure = cookie.secure || cookie.Secure || false
-  
+
   return `
   <div class="cookie-item network-cookie">
   <div class="cookie-header">
   <span class="cookie-name">Received from ${cookie.domain || '(unknown)'}</span>
   <div class="cookie-badges">
-  ${isThirdParty ? '<span class="badge third-party">3rd Party</span>' : '<span class="badge first-party">1st Party</span>'}
+  ${
+    isThirdParty
+      ? '<span class="badge third-party">3rd Party</span>'
+      : '<span class="badge first-party">1st Party</span>'
+  }
   ${isSecure ? '<span class="badge secure">Secure</span>' : ''}
   </div>
   </div>
@@ -50,7 +59,29 @@ export function createNetworkCookieItem(cookie) {
   <strong>Expires:</strong> ${cookie.expires || 'Session'}
   </div>
   <div class="cookie-value">
-  <strong>Captured at:</strong> ${new Date(cookie.saveTimestamp).toLocaleString()}
+  <strong>Captured at:</strong> ${new Date(
+    cookie.saveTimestamp
+  ).toLocaleString()}
+  </div>
+  </div>
+  `
+}
+
+export function renderExternalDomainsList(domainStats) {
+  const listElement = document.getElementById('external-domains-list')
+  listElement.innerHTML = Object.entries(domainStats).map(([domain, percent]) => {
+    return renderDomainItem(domain, percent.toFixed(2) + '%')
+  }).join('')
+}
+
+export function renderDomainItem(domain, percent) {
+  return `
+  <div class="cookie-item ${domain}">
+  <div class="cookie-header">
+  <span class="cookie-name">${domain}</span>
+  </div>
+  <div class="cookie-meta">
+  <strong>Amount:</strong> ${percent}
   </div>
   </div>
   `
@@ -147,13 +178,26 @@ export function showCookieDetails(cookie) {
     { label: 'Category', value: cookie.aiCategory || simpleCookieClassifier(cookie) },
     { label: 'Domain', value: cookie.domain || 'N/A' },
     { label: 'Path', value: cookie.path || cookie.Path || '/' },
-    { label: 'Expires', value: cookie.expirationDate ? new Date(cookie.expirationDate * 1000).toLocaleString() : (cookie.Expires || 'Session') },
-    { label: 'Secure', value: (cookie.secure || cookie.Secure) ? 'Yes' : 'No' },
-    { label: 'HttpOnly', value: (cookie.httpOnly || cookie.HttpOnly) ? 'Yes' : 'No' },
+    {
+      label: 'Expires',
+      value: cookie.expirationDate
+        ? new Date(cookie.expirationDate * 1000).toLocaleString()
+        : cookie.Expires || 'Session',
+    },
+    { label: 'Secure', value: cookie.secure || cookie.Secure ? 'Yes' : 'No' },
+    {
+      label: 'HttpOnly',
+      value: cookie.httpOnly || cookie.HttpOnly ? 'Yes' : 'No',
+    },
     { label: 'SameSite', value: cookie.sameSite || cookie.SameSite || 'None' },
     { label: 'Third Party', value: cookie.thirdParty ? 'Yes' : 'No' },
     { label: 'URL', value: cookie.url || 'N/A' },
-    { label: 'Captured At', value: cookie.saveTimestamp ? new Date(cookie.saveTimestamp).toLocaleString() : 'N/A' },
+    {
+      label: 'Captured At',
+      value: cookie.saveTimestamp
+        ? new Date(cookie.saveTimestamp).toLocaleString()
+        : 'N/A',
+    },
   ]
 
   detailsDiv.innerHTML = details.map(detail => `

@@ -4,6 +4,10 @@
   box-sizing: border-box;
 }
 
+#search{
+  display: none;
+}
+
 body {
   width: 500px;
   height: 600px;
@@ -88,12 +92,17 @@ header h1 {
 }
 
 .filters input,
-.filters select {
+.filters select,
+.filters label {
   flex: 1;
   padding: 6px 10px;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 13px;
+}
+
+.filters label{
+  display: none;
 }
 
 .tab-content {

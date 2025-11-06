@@ -81,6 +81,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 //   { urls: ['<all_urls>'] },
 // )
 
+chrome.cookies.onChanged.addListener(changeInfo => {
+  // console.log('Cookie changed: ', changeInfo)
+})
+
+
 chrome.webRequest.onHeadersReceived.addListener(
   async function (details) {
     if (details.responseHeaders && details.responseHeaders.length > 0) {
@@ -88,9 +93,6 @@ chrome.webRequest.onHeadersReceived.addListener(
         header => header.name.toLowerCase() === 'set-cookie'
       )
       if (cookieDough.length > 0) {
-
-        console.log('------- Cookie detected -------')
-        console.log('Raw cookie dough:', cookieDough)
 
         const bakedCookies = parseCookieFromHeader(
           cookieDough.map(c => c.value)
@@ -100,7 +102,7 @@ chrome.webRequest.onHeadersReceived.addListener(
 
         let [tab] = await chrome.tabs.query({
           active: true,
-          currentWindow: true,
+          lastFocusedWindow: true,
         })
         console.log('Current tab:', tab)
         if (!tab?.url) return
@@ -129,7 +131,9 @@ chrome.webRequest.onHeadersReceived.addListener(
               method: details.method,
               thirdParty: thirdParty,
               fromTabId: tab.id,
+              capturedAtDomain: currentUrl.hostname,
             })
+            console.log('capturedAtDomain:', currentUrl.hostname)
           })
 
           if (cookies.length > 100) {
