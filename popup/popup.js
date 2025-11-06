@@ -97,13 +97,15 @@ function switchTab(tabName) {
   if (currentView === VIEWS.DOMAINS) {
     document.getElementById('is-only-current-tab-label').style.display = 'flex'
   } else {
-    document.getElementById('is-only-current-tab-label').style.display =
-      'none'
+    document.getElementById('is-only-current-tab-label').style.display = 'none'
   }
 }
 
-async function updateUI() {
+export async function updateUI() {
   updateSummaryStats()
+  storedCookies = await getStoredCookies()
+  console.log('Stored cookies:', storedCookies)
+  capturedCookies = await getCapturedCookies()
   renderCookieList('stored', storedCookies)
   renderCookieList('captured', capturedCookies)
 
@@ -151,7 +153,7 @@ async function loadCookies() {
 }
 
 async function storeAndGetCookiesFromCurrentTab() {
-  // overrites stored cookies
+  // NOTE: it overrites stored cookies
   let [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
   if (tab?.url) {
     const url = new URL(tab.url)

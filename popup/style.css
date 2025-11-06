@@ -4,7 +4,7 @@
   box-sizing: border-box;
 }
 
-#search{
+#search {
   display: none;
 }
 
@@ -101,7 +101,7 @@ header h1 {
   font-size: 13px;
 }
 
-.filters label{
+.filters label {
   display: none;
 }
 
@@ -188,7 +188,7 @@ header h1 {
 
 .cookie-buttons {
   display: flex;
-  gap: 4px;
+  gap: 8px;
   margin-left: 8px;
 }
 
@@ -197,16 +197,15 @@ header h1 {
   border-radius: 5px;
   border: none;
   cursor: pointer;
-  padding: 4px;
 }
 
 .cookie-buttons button:hover {
-  background: #99999941;
+  background: #99999950;
 }
 
 .cookie-buttons img {
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
 }
 
 .badge.third-party {
@@ -230,11 +229,17 @@ header h1 {
 }
 
 .cookie-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+
   font-size: 12px;
   color: #666;
 }
 
 .cookie-value {
+  display: flex;
+  justify-content: space-between;
   font-size: 11px;
   color: #999;
   margin-top: 4px;

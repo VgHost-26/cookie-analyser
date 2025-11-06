@@ -1,14 +1,20 @@
-import { simpleCookieClassifier, aiCookieClassifier } from "./functions.js"
-import { applyFilters } from "./popup/popup.js"
+import {
+  simpleCookieClassifier,
+  classifyCookiesInBackground,
+  getCookieByName,
+  aiCookieClassifier,
+  updateCookieInStorage,
+} from './functions.js'
+import { applyFilters, updateUI } from './popup/popup.js'
 
 export function createCookieItem(cookie, category = null) {
   const name = cookie.name || '(unnamed)'
   const value = cookie.value || cookie[name] || ''
-  const cookieCategory = category || cookie.aiCategory || simpleCookieClassifier(cookie)
+  const cookieAiCategory = cookie.aiCategory || null
+  const cookieCategory = category || simpleCookieClassifier(cookie)
   const isThirdParty = cookie.thirdParty || false
   const isSecure = cookie.secure || cookie.Secure || false
   const isInvisible = cookie.invisible || false
-
   return `
   <div class="cookie-item ${cookieCategory}">
   <div class="cookie-header">
@@ -22,18 +28,30 @@ export function createCookieItem(cookie, category = null) {
   }
   ${isSecure ? '<span class="badge secure">Secure</span>' : ''}
   </div>
-  <div class="cookie-buttons">
-  <a href="https://cookiepedia.co.uk/cookies/${encodeURIComponent(name)}" target="_blank" id="cookiepedia-button" cookie-name="${name}" class="cookiepedia-button"><img src="../icons/external.png" /></a>
-  <button id="ai-button" cookie-name="${name}" type="button" class="ai-button"><img src="../icons/stars.png" /></button>
-  </div>
   </div>
   <div class="cookie-meta">
+  <span>
   <strong>Category:</strong> ${cookieCategory}
+  
+  </span>
+  ${
+    cookieAiCategory
+      ? `<span><strong>AI Category:</strong> ${cookieAiCategory}</span>`
+      : ''
+  }
+  
   </div>
   <div class="cookie-value">
-  <strong>Value:</strong> ${value.substring(0, 50)}${
+  <span><strong>Value:</strong> ${value.substring(0, 50)}${
     value.length > 50 ? '...' : ''
   }
+  </span>
+  <div class="cookie-buttons">
+  <a href="https://cookiepedia.co.uk/cookies/${encodeURIComponent(
+    name
+  )}" target="_blank" class="cookiepedia-button"><img src="../icons/external.png" /></a>
+  <button  type="button" class="ai-button" cookie-name="${name}"><img cookie-name="${name}" src="../icons/stars.png" /></button>
+  </div>
   </div>
   </div>
   `
@@ -69,9 +87,11 @@ export function createNetworkCookieItem(cookie) {
 
 export function renderExternalDomainsList(domainStats) {
   const listElement = document.getElementById('external-domains-list')
-  listElement.innerHTML = Object.entries(domainStats).map(([domain, percent]) => {
-    return renderDomainItem(domain, percent.toFixed(2) + '%')
-  }).join('')
+  listElement.innerHTML = Object.entries(domainStats)
+    .map(([domain, percent]) => {
+      return renderDomainItem(domain, percent.toFixed(2) + '%')
+    })
+    .join('')
 }
 
 export function renderDomainItem(domain, percent) {
@@ -100,9 +120,13 @@ export async function renderCookieList(listType, cookies) {
     return
   }
 
-  listElement.innerHTML = filteredCookies.map(cookie => {
-    return listType === 'captured' ? createNetworkCookieItem(cookie) : createCookieItem(cookie)
-  }).join('')
+  listElement.innerHTML = filteredCookies
+    .map(cookie => {
+      return listType === 'captured'
+        ? createNetworkCookieItem(cookie)
+        : createCookieItem(cookie)
+    })
+    .join('')
 
   listElement.querySelectorAll('.cookie-item').forEach((item, index) => {
     item.addEventListener('click', () => {
@@ -110,63 +134,30 @@ export async function renderCookieList(listType, cookies) {
     })
   })
 
+  listElement.querySelectorAll('.ai-button').forEach(button => {
+    button.addEventListener('click', async e => {
+      const cookieName = e.target.getAttribute('cookie-name')
+      e.stopPropagation()
+      console.log('running ai classifier for cookie:', cookieName)
+      const promise = aiCookieClassifier(cookieName)
+      e.target.setAttribute('src', '../icons/loading.png')
+      const results = await promise
+      e.target.setAttribute('src', '../icons/stars.png')
+      console.log('results: ', results)
+
+      const cookie = await getCookieByName(cookieName)
+      await updateCookieInStorage({
+        ...cookie,
+        aiCategory: results,
+      })
+      updateUI()
+    })
+  })
+
   if (listType === 'stored') {
-    classifyCookiesInBackground(filteredCookies, listElement);
+    // classifyCookiesInBackground(filteredCookies, listElement)
   }
 }
-
-//debug info shown in Inspect popup console
-async function classifyCookiesInBackground(cookies, listElement) {
-  console.log(`%c[AI Classification] Starting background classification for ${cookies.length} cookies`, 'color: #4CAF50; font-weight: bold');
-
-  for (let i = 0; i < cookies.length; i++) {
-    const cookie = cookies[i];
-    if (!cookie.aiCategory) {
-      const startTime = performance.now();
-      try {
-        const oldCategory = simpleCookieClassifier(cookie);
-        const category = await aiCookieClassifier(cookie);
-        const duration = (performance.now() - startTime).toFixed(2);
-
-        cookie.aiCategory = category;
-
-        const changed = category !== oldCategory;
-        const logColor = changed ? '#FF9800' : '#2196F3';
-        const changeIndicator = changed ? '🔄' : '✓';
-
-        console.log(
-          `%c${changeIndicator} [${i + 1}/${cookies.length}] "${cookie.name}"`,
-          `color: ${logColor}`,
-          `\n  Keyword: ${oldCategory}`,
-          `\n  AI Model: ${category}`,
-          `\n  Changed: ${changed ? 'YES' : 'NO'}`,
-          `\n  Time: ${duration}ms`
-        );
-
-        if (changed) {
-          const cookieItems = listElement.querySelectorAll('.cookie-item');
-          if (cookieItems[i]) {
-            cookieItems[i].className = `cookie-item ${category}`;
-            const metaDiv = cookieItems[i].querySelector('.cookie-meta');
-            if (metaDiv) {
-              metaDiv.innerHTML = `<strong>Category:</strong> ${category}`;
-            }
-          }
-
-          if (typeof window.updateSummaryStats === 'function') {
-            window.updateSummaryStats();
-          }
-        }
-      } catch (error) {
-        const duration = (performance.now() - startTime).toFixed(2);
-        console.error(`%c❌ [${i + 1}/${cookies.length}] "${cookie.name}" failed (${duration}ms)`, 'color: #F44336', error);
-      }
-    }
-  }
-
-  console.log(`%c[AI Classification] Completed all classifications`, 'color: #4CAF50; font-weight: bold');
-}
-
 
 export function showCookieDetails(cookie) {
   const modal = document.getElementById('cookie-details-modal')
@@ -175,7 +166,10 @@ export function showCookieDetails(cookie) {
   const details = [
     { label: 'Name', value: cookie.name || '(Network Cookie)' },
     { label: 'Value', value: cookie.value || '' },
-    { label: 'Category', value: cookie.aiCategory || simpleCookieClassifier(cookie) },
+    {
+      label: 'Category',
+      value: cookie.aiCategory || simpleCookieClassifier(cookie),
+    },
     { label: 'Domain', value: cookie.domain || 'N/A' },
     { label: 'Path', value: cookie.path || cookie.Path || '/' },
     {
@@ -200,12 +194,16 @@ export function showCookieDetails(cookie) {
     },
   ]
 
-  detailsDiv.innerHTML = details.map(detail => `
+  detailsDiv.innerHTML = details
+    .map(
+      detail => `
     <div class="detail-row">
       <div class="detail-label">${detail.label}:</div>
       <div class="detail-value">${detail.value}</div>
     </div>
-  `).join('')
+  `
+    )
+    .join('')
 
   modal.showModal()
 }
