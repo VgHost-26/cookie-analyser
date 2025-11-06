@@ -76,7 +76,6 @@ export function getCapturedCookiesStats(capturedCookies) {
       domainCount[cookie.domain] = 1
     }
   })
-  console.log(domainCount)
 
   const domainPercent = {}
   Object.entries(domainCount).map(([key, val]) => {
@@ -90,6 +89,7 @@ export function getCapturedCookiesStats(capturedCookies) {
   return {
     domains: [...new Set(domains)],
     domainStats: sorted,
+    numOfDomains: Object.keys(domainCount).length,
   }
 }
 
@@ -167,11 +167,10 @@ export async function classifyCookiesInBackground(cookies, listElement) {
 }
 
 export async function updateCookieInStorage(updatedCookie) {
-  console.log('updating cookie in storage: ', updatedCookie)
   const result = await chrome.storage.local.get([STORAGE_STORED_COOKIES_KEY])
   const cookies = result[STORAGE_STORED_COOKIES_KEY] || []
   const index = cookies.findIndex(cookie => cookie.name === updatedCookie.name)
-  console.log('found cookie index: ', index)
+
   if (index !== -1) {
     cookies[index] = updatedCookie
     await chrome.storage.local.set({ [STORAGE_STORED_COOKIES_KEY]: cookies })

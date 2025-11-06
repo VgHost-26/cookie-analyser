@@ -5,6 +5,7 @@ import {
   aiCookieClassifier,
   updateCookieInStorage,
 } from './functions.js'
+import { COOKIE_CATEGORIES } from './globals.js'
 import { applyFilters, updateUI } from './popup/popup.js'
 
 export function createCookieItem(cookie, category = null) {
@@ -16,7 +17,11 @@ export function createCookieItem(cookie, category = null) {
   const isSecure = cookie.secure || cookie.Secure || false
   const isInvisible = cookie.invisible || false
   return `
-  <div class="cookie-item ${cookieCategory}">
+  <div class="cookie-item ${
+    cookieCategory === COOKIE_CATEGORIES.UNKNOWN
+      ? cookieAiCategory || cookieCategory
+      : cookieCategory
+  }">
   <div class="cookie-header">
   <span class="cookie-name">${name}</span>
   <div class="cookie-badges">
@@ -74,12 +79,16 @@ export function createNetworkCookieItem(cookie) {
   </div>
   </div>
   <div class="cookie-meta">
+  <span>
   <strong>Expires:</strong> ${cookie.expires || 'Session'}
+  </span>
   </div>
   <div class="cookie-value">
+  <span>
   <strong>Captured at:</strong> ${new Date(
     cookie.saveTimestamp
   ).toLocaleString()}
+  </span>
   </div>
   </div>
   `

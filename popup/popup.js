@@ -25,7 +25,6 @@ let filters = {
 let currentView = VIEWS.STORED
 
 ;(async function initPopupWindow() {
-  console.log('init')
   currentTab = await getCurrentTab()
   if (currentTab?.url) {
     currentTabURL = new URL(currentTab?.url)
@@ -73,7 +72,6 @@ function setupEventListeners() {
   // Clear button
   // document.getElementById('clear-btn').addEventListener('click', clearAllCookies)
 
-  // Modal close
   document.querySelector('.close').addEventListener('click', () => {
     document.getElementById('cookie-details-modal').close()
   })
@@ -82,13 +80,11 @@ function setupEventListeners() {
 function switchTab(tabName) {
   currentView = tabName
 
-  // Update tab buttons
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.classList.remove('active')
   })
   document.querySelector(`[data-tab="${tabName}"]`).classList.add('active')
 
-  // Update tab panes
   document.querySelectorAll('.tab-pane').forEach(pane => {
     pane.classList.remove('active')
   })
@@ -105,7 +101,7 @@ export async function updateUI() {
   updateSummaryStats()
   storedCookies = await getStoredCookies()
   console.log('Stored cookies:', storedCookies)
-  capturedCookies = await getCapturedCookies()
+  capturedCookies = await getCapturedCookiesFromCurrentTab()
   renderCookieList('stored', storedCookies)
   renderCookieList('captured', capturedCookies)
 
@@ -120,29 +116,34 @@ export async function updateUI() {
   renderExternalDomainsList(capturedCookieStats.domainStats)
 }
 
-window.updateSummaryStats = function updateSummaryStats() {
+window.updateSummaryStats = async function updateSummaryStats() {
   const categories = {
     essential: 0,
     analytics: 0,
     marketing: 0,
     functional: 0,
+    externalDomains: 0,
   }
 
   storedCookies.forEach(cookie => {
-    const category = cookie.aiCategory || simpleCookieClassifier(cookie)
+    const category = simpleCookieClassifier(cookie)
     if (categories.hasOwnProperty(category)) {
       categories[category]++
     }
   })
+  const capturedCurrTab = await getCapturedCookiesFromCurrentTab()
+  const capturedCookieStats = getCapturedCookiesStats(capturedCurrTab)
+  categories.externalDomains = capturedCookieStats.numOfDomains
 
   console.log(
-    `%c[Stats Update] Essential: ${categories.essential}, Analytics: ${categories.analytics}, Marketing: ${categories.marketing}`,
+    `%c[Stats Update] Essential: ${categories.essential}, Analytics: ${categories.analytics}, Marketing: ${categories.marketing}, External Domains: ${categories.externalDomains}, Functional: ${categories.functional}`,
     'color: #00BCD4'
   )
 
   document.getElementById('essential-count').textContent = categories.essential
   document.getElementById('analytics-count').textContent = categories.analytics
   document.getElementById('marketing-count').textContent = categories.marketing
+  document.getElementById('external-domains-count').textContent = categories.externalDomains
   document.getElementById('functional-count').textContent =
     categories.functional
 }
@@ -153,13 +154,20 @@ async function loadCookies() {
 }
 
 async function storeAndGetCookiesFromCurrentTab() {
-  // NOTE: it overrites stored cookies
+  // NOTE: it overrites stored cookies but keeps aiCategory
+
   let [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
   if (tab?.url) {
     const url = new URL(tab.url)
     const currentDomain = `${url.protocol}//${url.hostname}/`
     console.log('tab url', currentDomain)
-    const currentCookies = await chrome.cookies.getAll({ url: currentDomain })
+    let currentCookies = await chrome.cookies.getAll({ url: currentDomain })
+    const oldCookies = await getStoredCookies()
+    if (oldCookies.length > 0) {
+      console.log('old cookies exists')
+      currentCookies = transferAiClassification(oldCookies, currentCookies)
+    }
+
     chrome.storage.local.set({ [STORAGE_STORED_COOKIES_KEY]: currentCookies })
     return currentCookies
   }
@@ -203,5 +211,18 @@ export function applyFilters(cookies) {
     if (filters.party === 'third' && !isThirdParty) return false
 
     return true
+  })
+}
+
+function transferAiClassification(oldCookies, newCookies) {
+  return newCookies.map(newCookie => {
+    const oldCookie = oldCookies.find(
+      oldCookie => oldCookie.name === newCookie.name
+    )
+    if (!oldCookie?.aiCategory) return newCookie
+    return {
+      ...newCookie,
+      aiCategory: oldCookie.aiCategory,
+    }
   })
 }

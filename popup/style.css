@@ -192,20 +192,27 @@ header h1 {
   margin-left: 8px;
 }
 
-.cookie-buttons button {
+.cookie-buttons button,
+a {
   background: transparent;
   border-radius: 5px;
   border: none;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.cookie-buttons button:hover {
+.cookie-buttons button:hover,
+a:hover {
   background: #99999950;
 }
 
 .cookie-buttons img {
   width: 20px;
   height: 20px;
+  margin: 4px;
+  filter: contrast(.5);
 }
 
 .badge.third-party {

@@ -8,13 +8,10 @@ export const marketingKeywords = [
   'mc_eid',
   'igshid',
   'referrer',
-  'ref',
   'ref_src',
   'doubleclick',
   '_adroll',
   'ads',
-  'tr',
-  'fr',
   '_gcl',
 ]
 export const analyticsKeywords = [

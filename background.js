@@ -5,54 +5,59 @@ import {
 } from './globals.js'
 
 async function setupOffscreenDocument() {
-  const offscreenUrl = chrome.runtime.getURL('offscreen.html');
+  const offscreenUrl = chrome.runtime.getURL('offscreen.html')
   const existingContexts = await chrome.runtime.getContexts({
     contextTypes: ['OFFSCREEN_DOCUMENT'],
-    documentUrls: [offscreenUrl]
-  });
+    documentUrls: [offscreenUrl],
+  })
 
   if (existingContexts.length > 0) {
-    return;
+    return
   }
 
   await chrome.offscreen.createDocument({
     url: 'offscreen.html',
     reasons: ['DOM_SCRAPING'],
-    justification: 'ONNX Runtime for cookie classification'
-  });
+    justification: 'ONNX Runtime for cookie classification',
+  })
 }
 
 chrome.runtime.onInstalled.addListener(({ reason }) => {
-  console.log('Extension installed, reason: ', reason)
   if (reason == 'install') {
     chrome.storage.local.set({ [STORAGE_CAPTURED_COOKIES_KEY]: [] })
     chrome.storage.local.set({ [STORAGE_STORED_COOKIES_KEY]: [] })
   }
-  setupOffscreenDocument();
+  setupOffscreenDocument()
 })
 
 chrome.runtime.onStartup.addListener(() => {
-  setupOffscreenDocument();
+  setupOffscreenDocument()
 })
 
 async function classifyCookieViaOffscreen(cookieName) {
-  await setupOffscreenDocument();
-  return new Promise((resolve) => {
-    chrome.runtime.sendMessage({
-      type: 'CLASSIFY_COOKIE',
-      cookieName: cookieName
-    }, (response) => {
-      resolve(response);
-    });
-  });
+  await setupOffscreenDocument()
+  return new Promise(resolve => {
+    chrome.runtime.sendMessage(
+      {
+        type: 'CLASSIFY_COOKIE',
+        cookieName: cookieName,
+      },
+      response => {
+        resolve(response)
+      }
+    )
+  })
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === 'CLASSIFY_COOKIE' && !sender.url?.includes('offscreen.html')) {
+  if (
+    message.type === 'CLASSIFY_COOKIE' &&
+    !sender.url?.includes('offscreen.html')
+  ) {
     classifyCookieViaOffscreen(message.cookieName).then(response => {
-      sendResponse(response);
-    });
-    return true;
+      sendResponse(response)
+    })
+    return true
   }
 })
 
@@ -85,7 +90,6 @@ chrome.cookies.onChanged.addListener(changeInfo => {
   // console.log('Cookie changed: ', changeInfo)
 })
 
-
 chrome.webRequest.onHeadersReceived.addListener(
   async function (details) {
     if (details.responseHeaders && details.responseHeaders.length > 0) {
@@ -93,27 +97,20 @@ chrome.webRequest.onHeadersReceived.addListener(
         header => header.name.toLowerCase() === 'set-cookie'
       )
       if (cookieDough.length > 0) {
-
         const bakedCookies = parseCookieFromHeader(
           cookieDough.map(c => c.value)
         )
-
-        console.log(bakedCookies)
 
         let [tab] = await chrome.tabs.query({
           active: true,
           lastFocusedWindow: true,
         })
-        console.log('Current tab:', tab)
         if (!tab?.url) return
         const currentUrl = new URL(tab?.url)
 
         chrome.storage.local.get([STORAGE_CAPTURED_COOKIES_KEY], result => {
           const cookies = result.capturedCookies || []
-          console.log('=========== Initiator:', details.initiator)
           const initiatorURL = new URL(details.initiator)
-          console.log('current url:', currentUrl.hostname)
-          console.log('Initiator URL:', initiatorURL.hostname)
           const thirdParty = currentUrl.hostname !== initiatorURL.hostname
 
           if (thirdParty) {
@@ -133,7 +130,6 @@ chrome.webRequest.onHeadersReceived.addListener(
               fromTabId: tab.id,
               capturedAtDomain: currentUrl.hostname,
             })
-            console.log('capturedAtDomain:', currentUrl.hostname)
           })
 
           if (cookies.length > 100) {
