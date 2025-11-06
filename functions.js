@@ -84,8 +84,4 @@ export async function getCurrentTab() {
   return tab
 }
 
-
-export function getSecurityScore(cookie){
-  
-
-}
+export function getSecurityScore(cookie) {}
