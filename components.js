@@ -18,6 +18,10 @@ export function createCookieItem(cookie, category = null) {
   ${isThirdParty ? '<span class="badge third-party">3rd Party</span>' : '<span class="badge first-party">1st Party</span>'}
   ${isSecure ? '<span class="badge secure">Secure</span>' : ''}
   </div>
+  <div class="cookie-buttons">
+  <a href="https://cookiepedia.co.uk/cookies/${encodeURIComponent(name)}" target="_blank" id="cookiepedia-button" cookie-name="${name}" class="cookiepedia-button"><img src="../icons/external.png" /></a>
+  <button id="ai-button" cookie-name="${name}" type="button" class="ai-button"><img src="../icons/stars.png" /></button>
+  </div>
   </div>
   <div class="cookie-meta">
   <strong>Category:</strong> ${cookieCategory}

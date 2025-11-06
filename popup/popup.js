@@ -96,7 +96,10 @@ window.updateSummaryStats = function updateSummaryStats() {
     }
   })
 
-  console.log(`%c[Stats Update] Essential: ${categories.essential}, Analytics: ${categories.analytics}, Marketing: ${categories.marketing}`, 'color: #00BCD4');
+  console.log(
+    `%c[Stats Update] Essential: ${categories.essential}, Analytics: ${categories.analytics}, Marketing: ${categories.marketing}`,
+    'color: #00BCD4'
+  )
 
   document.getElementById('essential-count').textContent = categories.essential
   document.getElementById('analytics-count').textContent = categories.analytics
