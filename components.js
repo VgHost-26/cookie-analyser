@@ -4,6 +4,7 @@ import {
   getCookieByName,
   aiCookieClassifier,
   updateCookieInStorage,
+  getSecurityScore,
 } from './functions.js'
 import { COOKIE_CATEGORIES } from './globals.js'
 import { applyFilters, updateUI } from './popup/popup.js'
@@ -13,15 +14,17 @@ export function createCookieItem(cookie, category = null) {
   const value = cookie.value || cookie[name] || ''
   const cookieAiCategory = cookie.aiCategory || null
   const cookieCategory = category || simpleCookieClassifier(cookie)
+  const dangerLevel = cookie.dangerLevel || getSecurityScore(cookie).level
   const isThirdParty = cookie.thirdParty || false
   const isSecure = cookie.secure || cookie.Secure || false
   const isInvisible = cookie.invisible || false
+  console.log('danger level for cookie', name, ':', dangerLevel)
   return `
   <div class="cookie-item ${
     cookieCategory === COOKIE_CATEGORIES.UNKNOWN
       ? cookieAiCategory || cookieCategory
       : cookieCategory
-  }">
+  } danger-${dangerLevel}">
   <div class="cookie-header">
   <span class="cookie-name">${name}</span>
   <div class="cookie-badges">
@@ -46,11 +49,14 @@ export function createCookieItem(cookie, category = null) {
   }
   
   </div>
+  <div class="cookie-footer">
   <div class="cookie-value">
   <span><strong>Value:</strong> ${value.substring(0, 50)}${
     value.length > 50 ? '...' : ''
   }
   </span>
+  <span><strong>Danger:</strong> ${dangerLevel}</span>
+  </div>
   <div class="cookie-buttons">
   <a href="https://cookiepedia.co.uk/cookies/${encodeURIComponent(
     name

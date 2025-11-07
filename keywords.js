@@ -53,4 +53,5 @@ export const functionalKeywords = [
   'consent',
   'cookieconsent',
   'accept_cookies',
+  // 'i18n',
 ]

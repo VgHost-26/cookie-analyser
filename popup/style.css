@@ -135,6 +135,24 @@ header h1 {
   transition: all 0.2s;
 }
 
+
+.cookie-item.danger-critical {
+  background: color-mix(in srgb, white 100%, red 10%);
+}
+
+.cookie-item.danger-high {
+  background: color-mix(in srgb, white 100%, darkorange 10%);
+}
+
+.cookie-item.danger-medium {
+  /* background: color-mix(in srgb, white 100%, yellow 10%); */
+}
+
+.cookie-item.danger-low-medium {
+  /* background: color-mix(in srgb, white 100%, lightblue 10%); */
+}
+
+
 .cookie-item:hover {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transform: translateY(-1px);
@@ -244,9 +262,14 @@ a:hover {
   color: #666;
 }
 
-.cookie-value {
+.cookie-footer{
   display: flex;
   justify-content: space-between;
+
+}
+.cookie-value {
+  display: flex;
+  flex-direction: column;
   font-size: 11px;
   color: #999;
   margin-top: 4px;
