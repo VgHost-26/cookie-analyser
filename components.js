@@ -163,9 +163,6 @@ export async function renderCookieList(listType, cookies) {
     })
   })
 
-  if (listType === 'stored') {
-    // classifyCookiesInBackground(filteredCookies, listElement)
-  }
 }
 
 export function showCookieDetails(cookie) {

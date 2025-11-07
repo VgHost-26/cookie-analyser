@@ -6,6 +6,7 @@ import {
 
 import { renderCookieList, renderExternalDomainsList } from '../components.js'
 import {
+  deleteDomainCookies,
   getCapturedCookiesStats,
   getCurrentTab,
   simpleCookieClassifier,
@@ -69,8 +70,12 @@ function setupEventListeners() {
   // Export button
   // document.getElementById('export-btn').addEventListener('click', exportData)
 
-  // Clear button
-  // document.getElementById('clear-btn').addEventListener('click', clearAllCookies)
+  document.getElementById('clear-btn').addEventListener('click', async () => {
+    console.log(await deleteDomainCookies(currentTabURL.hostname))
+    await storeAndGetCookiesFromCurrentTab()
+    updateUI()
+
+  })
 
   document.querySelector('.close').addEventListener('click', () => {
     document.getElementById('cookie-details-modal').close()
@@ -143,7 +148,8 @@ window.updateSummaryStats = async function updateSummaryStats() {
   document.getElementById('essential-count').textContent = categories.essential
   document.getElementById('analytics-count').textContent = categories.analytics
   document.getElementById('marketing-count').textContent = categories.marketing
-  document.getElementById('external-domains-count').textContent = categories.externalDomains
+  document.getElementById('external-domains-count').textContent =
+    categories.externalDomains
   document.getElementById('functional-count').textContent =
     categories.functional
 }
