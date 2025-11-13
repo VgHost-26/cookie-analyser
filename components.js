@@ -115,8 +115,13 @@ export function renderDomainItem(domain, percent) {
   <div class="cookie-header">
   <span class="cookie-name">${domain}</span>
   </div>
+  <div class="cookie-footer">
   <div class="cookie-meta">
   <strong>Amount:</strong> ${percent}
+  </div>
+  <div class="cookie-buttons">
+  <a href="https://www.google.com/search?q=what+is+${domain}+domain" target="_blank"><img src="../icons/external.png" /></a>
+  </div>
   </div>
   </div>
   `

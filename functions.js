@@ -99,71 +99,6 @@ export async function getCurrentTab() {
   return tab
 }
 
-//debug info shown in Inspect popup console
-export async function classifyCookiesInBackground(cookies, listElement) {
-  console.log(
-    `%c[AI Classification] Starting background classification for ${cookies.length} cookies`,
-    'color: #4CAF50; font-weight: bold'
-  )
-
-  for (let i = 0; i < cookies.length; i++) {
-    const cookie = cookies[i]
-    if (!cookie.aiCategory) {
-      const startTime = performance.now()
-      try {
-        const oldCategory = simpleCookieClassifier(cookie)
-        // const category = await aiCookieClassifier(cookie)
-        const category = ''
-        const duration = (performance.now() - startTime).toFixed(2)
-
-        cookie.aiCategory = category
-
-        const changed = category !== oldCategory
-        const logColor = changed ? '#FF9800' : '#2196F3'
-        const changeIndicator = changed ? '🔄' : '✓'
-
-        console.log(
-          `%c${changeIndicator} [${i + 1}/${cookies.length}] "${cookie.name}"`,
-          `color: ${logColor}`,
-          `\n  Keyword: ${oldCategory}`,
-          `\n  AI Model: ${category}`,
-          `\n  Changed: ${changed ? 'YES' : 'NO'}`,
-          `\n  Time: ${duration}ms`
-        )
-
-        if (changed) {
-          const cookieItems = listElement.querySelectorAll('.cookie-item')
-          if (cookieItems[i]) {
-            cookieItems[i].className = `cookie-item ${category}`
-            const metaDiv = cookieItems[i].querySelector('.cookie-meta')
-            if (metaDiv) {
-              metaDiv.innerHTML = `<strong>Category:</strong> ${category}`
-            }
-          }
-
-          if (typeof window.updateSummaryStats === 'function') {
-            window.updateSummaryStats()
-          }
-        }
-      } catch (error) {
-        const duration = (performance.now() - startTime).toFixed(2)
-        console.error(
-          `%c❌ [${i + 1}/${cookies.length}] "${
-            cookie.name
-          }" failed (${duration}ms)`,
-          'color: #F44336',
-          error
-        )
-      }
-    }
-  }
-
-  console.log(
-    `%c[AI Classification] Completed all classifications`,
-    'color: #4CAF50; font-weight: bold'
-  )
-}
-
 export async function updateCookieInStorage(updatedCookie) {
   const result = await chrome.storage.local.get([STORAGE_STORED_COOKIES_KEY])
   const cookies = result[STORAGE_STORED_COOKIES_KEY] || []
@@ -226,20 +161,8 @@ function prepareCookieForAiInput(cookie) {
 }
 
 function deleteCookie(cookie) {
-  // Cookie deletion is largely modeled off of how deleting cookies works when using HTTP headers.
-  // Specific flags on the cookie object like `secure` or `hostOnly` are not exposed for deletion
-  // purposes. Instead, cookies are deleted by URL, name, and storeId. Unlike HTTP headers, though,
-  // we don't have to delete cookies by setting Max-Age=0; we have a method for that ;)
-  //
-  // To remove cookies set with a Secure attribute, we must provide the correct protocol in the
-  // details object's `url` property.
-  // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#Secure
   const protocol = cookie.secure ? 'https:' : 'http:'
 
-  // Note that the final URL may not be valid. The domain value for a standard cookie is prefixed
-  // with a period (invalid) while cookies that are set to `cookie.hostOnly == true` do not have
-  // this prefix (valid).
-  // https://developer.chrome.com/docs/extensions/reference/cookies/#type-Cookie
   const cookieUrl = `${protocol}//${cookie.domain}${cookie.path}`
 
   return chrome.cookies.remove({
