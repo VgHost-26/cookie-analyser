@@ -1,4 +1,4 @@
-# cookie-analiser
+# cookie-analyser
 
 ## Usage (Tested on Mac and Windows)
 
